@@ -1,0 +1,9 @@
+packages:
+  - "packages/*"
+  - "apps/*"
+  - "spike/*"
+
+# Pi pulls these in transitively; their postinstall scripts are not needed here.
+allowBuilds:
+  "@google/genai": false
+  protobufjs: false

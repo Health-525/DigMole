@@ -1,0 +1,22 @@
+{
+  "name": "digmole",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@11.7.0",
+  "scripts": {
+    "demo": "pnpm --filter @digmole/cli demo",
+    "spike": "pnpm --filter @digmole/pi-spike spike",
+    "test": "node --test \"packages/sim/test/**/*.test.ts\"",
+    "typecheck": "tsc -p packages/sim/tsconfig.json --noEmit && tsc -p apps/cli/tsconfig.json --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "typescript": "^5.9.0"
+  },
+  "pnpm": {
+    "ignoredBuiltDependencies": [
+      "@google/genai",
+      "protobufjs"
+    ]
+  }
+}

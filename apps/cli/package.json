@@ -1,0 +1,12 @@
+{
+  "name": "@digmole/cli",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@digmole/sim": "workspace:*"
+  },
+  "scripts": {
+    "demo": "node src/main.ts"
+  }
+}
