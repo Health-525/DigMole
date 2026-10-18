@@ -234,7 +234,7 @@ export function* dumpToTarget(ctx: Ctx, args: DumpArgs): TaskGen {
     if (target.filled >= target.capacity - 1e-3) {
       return fail("TRUCK_FULL", `「${target.label}」已经装满了`);
     }
-    yield* approach(ctx, target, 5.6);
+    yield* approach(ctx, target, 7.2);
     return yield* pourAt(ctx, target, { height: target.bedHeight + 1.6, truck: target });
   }
 

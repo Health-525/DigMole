@@ -48,6 +48,8 @@ export class Heightfield {
   /** Ground removed/added since the field was created. */
   totalDug = 0;
   totalRaised = 0;
+  /** Bumped whenever the heights change, so renderers can skip untouched frames. */
+  version = 0;
 
   constructor(cfg: TerrainConfig = DEFAULT_TERRAIN) {
     this.cell = cfg.cell;
@@ -139,6 +141,7 @@ export class Heightfield {
       }
     }
     this.totalDug += removed;
+    if (removed > 0) this.version++;
     return { removed, vertices };
   }
 
@@ -183,6 +186,7 @@ export class Heightfield {
       added += (after - before) * this.cellArea;
     }
     this.totalRaised += added;
+    if (added > 0) this.version++;
     return { added, vertices: idx.length };
   }
 

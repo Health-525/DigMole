@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DigMole · 挖掘机沙盒</title>
+    <style>
+      :root {
+        --ink: #0e1620;
+        --panel: rgba(12, 20, 30, 0.72);
+        --line: rgba(255, 255, 255, 0.12);
+        --amber: #e0a800;
+        --ok: #4ade80;
+        --bad: #f87171;
+      }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; height: 100%; overflow: hidden; background: #0b1017; }
+      body {
+        font-family: "Segoe UI", "Microsoft YaHei", system-ui, sans-serif;
+        color: #e8eef5;
+        -webkit-font-smoothing: antialiased;
+      }
+      #view { display: block; width: 100vw; height: 100vh; }
+
+      .panel {
+        position: absolute;
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        backdrop-filter: blur(14px);
+        box-shadow: 0 18px 40px rgba(0, 0, 0, 0.35);
+      }
+
+      #hud {
+        top: 20px;
+        left: 20px;
+        width: 268px;
+        padding: 16px 18px 14px;
+      }
+      #hud h1 {
+        margin: 0 0 2px;
+        font-size: 15px;
+        letter-spacing: 0.08em;
+        font-weight: 600;
+      }
+      #hud .sub { font-size: 11px; color: #8fa3b8; margin-bottom: 14px; letter-spacing: 0.04em; }
+
+      .stat { display: flex; justify-content: space-between; align-items: baseline; font-size: 12px; margin: 7px 0; }
+      .stat .k { color: #93a7bb; }
+      .stat .v { font-variant-numeric: tabular-nums; font-weight: 600; }
+
+      .bar { height: 5px; border-radius: 3px; background: rgba(255,255,255,0.1); overflow: hidden; margin: 3px 0 10px; }
+      .bar > i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #f0b800, #ffd75e); transition: width .12s linear; }
+      .bar.truck > i { background: linear-gradient(90deg, #3b82f6, #60a5fa); }
+
+      #log {
+        margin-top: 12px;
+        border-top: 1px solid var(--line);
+        padding-top: 10px;
+        height: 96px;
+        overflow: hidden;
+        font-size: 11px;
+        line-height: 1.65;
+        color: #9fb3c7;
+      }
+      #log .row { opacity: 0.9; }
+      #log .ok { color: var(--ok); }
+      #log .bad { color: var(--bad); }
+
+      #controls {
+        bottom: 22px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        padding: 10px 12px;
+      }
+      button {
+        font: inherit;
+        font-size: 12px;
+        color: #e8eef5;
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid var(--line);
+        border-radius: 9px;
+        padding: 8px 14px;
+        cursor: pointer;
+        transition: background .15s, transform .08s;
+      }
+      button:hover { background: rgba(255, 255, 255, 0.16); }
+      button:active { transform: translateY(1px); }
+      button.primary { background: var(--amber); border-color: #f5c33b; color: #241a00; font-weight: 700; }
+      button.primary:hover { background: #f0b800; }
+      button.stop { color: var(--bad); border-color: rgba(248, 113, 113, 0.4); }
+
+      .speed { display: flex; align-items: center; gap: 8px; font-size: 11px; color: #93a7bb; padding-left: 6px; }
+      input[type="range"] { width: 92px; accent-color: var(--amber); }
+
+      #hint {
+        position: absolute;
+        right: 20px;
+        bottom: 22px;
+        font-size: 11px;
+        color: #7d90a4;
+        text-align: right;
+        line-height: 1.6;
+      }
+      kbd {
+        background: rgba(255,255,255,0.1);
+        border: 1px solid var(--line);
+        border-radius: 4px;
+        padding: 1px 5px;
+        font-size: 10px;
+        font-family: inherit;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="view"></canvas>
+
+    <div id="hud" class="panel">
+      <h1>DIGMOLE</h1>
+      <div class="sub">挖掘机沙盒 · M0 预览</div>
+
+      <div class="stat"><span class="k">仿真时间</span><span class="v" id="s-time">0.0 s</span></div>
+      <div class="stat"><span class="k">铲斗装载</span><span class="v" id="s-load">0.00 / 1.00 m³</span></div>
+      <div class="bar"><i id="b-load"></i></div>
+      <div class="stat"><span class="k">卡车装载</span><span class="v" id="s-truck">0.0 / 8.0 m³</span></div>
+      <div class="bar truck"><i id="b-truck"></i></div>
+      <div class="stat"><span class="k">累计挖方</span><span class="v" id="s-dug">0.00 m³</span></div>
+      <div class="stat"><span class="k">动作</span><span class="v" id="s-action">待机</span></div>
+
+      <div id="log"></div>
+    </div>
+
+    <div id="controls" class="panel">
+      <button class="primary" id="btn-auto">开始自动作业</button>
+      <button id="btn-once">挖一斗</button>
+      <button class="stop" id="btn-stop">急停</button>
+      <button id="btn-reset">重置</button>
+      <span class="speed">速度 <input type="range" id="speed" min="1" max="6" step="1" value="3" /><b id="speed-v">3×</b></span>
+    </div>
+
+    <div id="hint">
+      左键拖拽旋转 · 滚轮缩放 · 右键平移<br />
+      按 <kbd>空格</kbd> 急停
+    </div>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

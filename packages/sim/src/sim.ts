@@ -53,6 +53,7 @@ export class Sim {
   readonly dt: number;
   private runner: TaskRunner | null = null;
   private activeName = "idle";
+  private pending: ((r: TaskResult) => void) | null = null;
   lastResult: TaskResult | null = null;
   readonly history: { action: string; result: TaskResult; at: number }[] = [];
 
@@ -89,7 +90,12 @@ export class Sim {
     const result = runner.outcome;
     this.runner = null;
     this.activeName = "idle";
-    if (failure) throw failure;
+    if (failure) {
+      const pending = this.pending;
+      this.pending = null;
+      pending?.(fail("CRASH", String(failure)));
+      throw failure;
+    }
     if (result) this.record(name, result);
   }
 
@@ -97,6 +103,9 @@ export class Sim {
     this.lastResult = result;
     this.history.push({ action, result, at: this.world.time });
     if (this.history.length > 200) this.history.shift();
+    const pending = this.pending;
+    this.pending = null;
+    pending?.(result);
   }
 
   /**
@@ -107,6 +116,17 @@ export class Sim {
     if (this.runner) throw new Error("已有动作正在运行，先等它结束");
     this.runner = new TaskRunner(gen);
     this.activeName = name;
+  }
+
+  /**
+   * Starts an action and resolves when it settles.
+   * This is the real-time path: the caller drives `tick()` from its own loop.
+   */
+  runAsync(name: string, gen: TaskGen): Promise<TaskResult> {
+    this.start(name, gen);
+    return new Promise<TaskResult>((resolve) => {
+      this.pending = resolve;
+    });
   }
 
   /**

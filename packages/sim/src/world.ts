@@ -93,11 +93,11 @@ export function createSandbox(): World {
   const t = world.terrain;
 
   // A big gravel heap east of the machine.
-  t.raise(16, 2, 96, 6.5);
+  t.raise(16, 2, 118, 5.2);
   // A smaller dirt heap to the north.
-  t.raise(-4, 14, 30, 4);
+  t.raise(-4, 14, 34, 3.8);
   // An excavation pit to the west.
-  t.dig(-16, 12, 7, 2.2);
+  t.dig(-16, 12, 7, 2.4);
   // Some natural undulation so the ground never looks like a plane.
   for (let iz = 0; iz < t.nz; iz += 1) {
     for (let ix = 0; ix < t.nx; ix += 1) {
